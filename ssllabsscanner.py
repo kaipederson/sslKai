@@ -36,7 +36,13 @@ def resultsFromCache(host, publish='off', startNew='off', fromCache='on', all='d
                 'fromCache': fromCache,
                 'all': all
               }
+
     data = requestAPI(path, payload)
+
+    while data['status'] != 'READY' and data['status'] != 'ERROR':
+        time.sleep(30)
+        data = requestAPI(path, payload)
+
     return data
 
 
