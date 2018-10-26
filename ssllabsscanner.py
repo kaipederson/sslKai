@@ -5,7 +5,7 @@ import time
 import sys
 import logging
 
-API = 'https://api.ssllabs.com/api/v2/'
+API = 'https://api.ssllabs.com/api/v3/'
 
 
 def requestAPI(path, payload={}):
@@ -61,7 +61,12 @@ def newScan(host, publish='off', startNew='on', all='done', ignoreMismatch='on')
     payload.pop('startNew')
 
     while results['status'] != 'READY' and results['status'] != 'ERROR':
-        time.sleep(1)
+        if results['status'] == 'IN_PROGRESS':
+            time.sleep(10)
+            print("Working on it.\n")
+        else:
+            time.sleep(5)
+
         results = requestAPI(path, payload)
 
     return results
