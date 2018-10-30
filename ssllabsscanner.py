@@ -19,6 +19,7 @@ def requestAPI(path, payload={}):
 
     try:
         response = requests.get(url, params=payload)
+        print(response.headers)
     except requests.exception.RequestException:
         logging.exception('Request failed.')
         sys.exit(1)
@@ -38,10 +39,11 @@ def resultsFromCache(host, publish='off', startNew='off', fromCache='on', all='d
               }
 
     data = requestAPI(path, payload)
+    try:
+        while data['status'] != 'READY' and data['status'] != 'ERROR':
+            time.sleep(30)
+            data = requestAPI(path, payload)
 
-    while data['status'] != 'READY' and data['status'] != 'ERROR':
-        time.sleep(30)
-        data = requestAPI(path, payload)
 
     return data
 

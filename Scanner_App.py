@@ -6,6 +6,8 @@ import time
 
 print_lock = threading.Lock()
 
+num_threads = 21;
+
 '''
 scan_domain uses the ssllabsscanner functions resultsFromCache (if possible) or newScan. The returned JSON object
 contains information regarding the SSLLab Scan. We're just concerned with the domain, IP, grade, and certificate.
@@ -77,7 +79,7 @@ with open(str(sys.argv[1]),"r") as file:
             domain_list.append(line)
 
 
-for i in range(5):
+for i in range(num_threads):
     t = threading.Thread(target=process_queue)
     t.daemon = True
     t.start()
