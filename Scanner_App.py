@@ -3,10 +3,11 @@ from queue import Queue
 import ssllabsscanner
 import sys
 import time
+import requests
 
 print_lock = threading.Lock()
 
-num_threads = 5;
+num_threads = 0;
 
 '''
 scan_domain uses the ssllabsscanner functions resultsFromCache (if possible) or newScan. The returned JSON object
@@ -27,8 +28,7 @@ def scan_domain(domain):
 
 
     with print_lock:
-        print("{}\n".format(threading.current_thread().name))
-        print("\n I scanned " + domain + "\n")
+        print("{}".format(threading.current_thread().name))
         print(scan)
 
         try:
@@ -53,7 +53,23 @@ def scan_domain(domain):
         print("Completed after = {0:.5f}".format(time.time() - start))
 
 
+
+'''
+
+Main Application
+
+'''
+
+
 print("Starting SSL Labs Scan ----------------------------------")
+
+scan_info = requests.get("https://api.ssllabs.com/api/v3/info")
+num_threads = (scan_info.json())['maxAssessments']
+
+print(scan_info.json())
+
+print("SSLLabs currently allows " + str(num_threads) + " concurrent assessments.\n")
+
 
 '''
 Helper method to write to Unmesha's SQL database. Should go inside of a lock in the scan_domain method.
@@ -84,6 +100,8 @@ for i in range(num_threads):
     t = threading.Thread(target=process_queue)
     t.daemon = True
     t.start()
+    num_threads = (requests.get("https://api.ssllabs.com/api/v3/info").json())['maxAssessments']
+    print("Updated max_threads: " + str(num_threads))
 
 start = time.time()
 

@@ -19,7 +19,7 @@ def requestAPI(path, payload={}):
 
     try:
         response = requests.get(url, params=payload)
-        print(response.headers)
+
     except requests.exception.RequestException:
         logging.exception('Request failed.')
         sys.exit(1)
@@ -63,14 +63,16 @@ def newScan(host, publish='off', startNew='on', all='done', ignoreMismatch='on')
 
     payload.pop('startNew')
 
+    try:
+        while results['status'] != 'READY' and results['status'] != 'ERROR':
+            if results['status'] == 'IN_PROGRESS':
+                time.sleep(10)
+            else:
+                time.sleep(5)
 
-    while results['status'] != 'READY' and results['status'] != 'ERROR':
-        if results['status'] == 'IN_PROGRESS':
-            time.sleep(10)
-            print("Working on it.\n")
-        else:
-            time.sleep(5)
-
-        results = requestAPI(path, payload)
+            results = requestAPI(path, payload)
+    except:
+        print("An error occurred")
+        return
 
     return results
