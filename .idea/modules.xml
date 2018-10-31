@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/../Multithreading_Test/.idea/Multithreading_Test.iml" filepath="$PROJECT_DIR$/../Multithreading_Test/.idea/Multithreading_Test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../sslKai/.idea/sslKai.iml" filepath="$PROJECT_DIR$/../sslKai/.idea/sslKai.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/ssllabs.iml" filepath="$PROJECT_DIR$/.idea/ssllabs.iml" />
     </modules>
   </component>
