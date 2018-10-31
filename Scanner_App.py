@@ -1,35 +1,81 @@
 import threading
 from queue import Queue
-import ssllabsscanner
 import sys
 import time
 import requests
+import logging
 
 print_lock = threading.Lock()
 
 num_threads = 0;
 
+API = 'https://api.ssllabs.com/api/v3/'
+
+
+def requestAPI(path, payload={}):
+    '''This is a helper method that takes the path to the relevant
+        API call and the user-defined payload and requests the
+        data/server test from Qualys SSL Labs.
+
+        Returns JSON formatted data'''
+
+    url = API + path
+
+    try:
+        response = requests.get(url, params=payload)
+
+    except requests.exception.RequestException:
+        logging.exception('Request failed.')
+        sys.exit(1)
+
+    data = response.json()
+    return data
+
+def newScan(host, publish='off', startNew='on', all='done', ignoreMismatch='on'):
+    path = 'analyze'
+    payload = {
+                'host': host,
+                'publish': publish,
+                'startNew': startNew,
+                'all': all,
+                'ignoreMismatch': ignoreMismatch
+              }
+    results = requestAPI(path, payload)
+
+    payload.pop('startNew')
+
+    try:
+        while results['status'] != 'READY' and results['status'] != 'ERROR':
+            if results['status'] == 'IN_PROGRESS':
+                time.sleep(10)
+            else:
+                time.sleep(5)
+
+            results = requestAPI(path, payload)
+    except:
+        print("An error occurred")
+        return
+
+    return results
+
+
 '''
 scan_domain uses the ssllabsscanner functions resultsFromCache (if possible) or newScan. The returned JSON object
 contains information regarding the SSLLab Scan. We're just concerned with the domain, IP, grade, and certificate.
 '''
+
 def scan_domain(domain):
 
     with print_lock:
-        print("\nStarting thread {}".format(threading.current_thread().name))
-        print("Scanning this domain " + domain + "\n")
+#       print("\nStarting thread {}".format(threading.current_thread().name))
+        print("Scanning " + domain)
 
-    #try:
-    #   scan = ssllabsscanner.resultsFromCache(str(domain))
-    #except:
     time.sleep(1)
-    scan = ssllabsscanner.newScan(str(domain))
-
-
+    scan = newScan(str(domain))
 
     with print_lock:
-        print("{}".format(threading.current_thread().name))
-        print(scan)
+#        print("{}".format(threading.current_thread().name))
+#        print(scan)
 
         try:
             ipAddress = scan['endpoints'][0]['ipAddress']
@@ -44,10 +90,12 @@ def scan_domain(domain):
             grade = "ERR"
 
         try:
-            cert = scan['endpoints'][0]['details']['cert']['sigAlg']
+            cert = scan['certs'][0]['sigAlg']
 
         except  Exception:
             cert = "ERR"
+
+        SQLWrite(domain, ipAddress, grade, cert)
 
         print(domain + " " + ipAddress + " " + grade + " " + cert)
         print("Completed after = {0:.5f}".format(time.time() - start))
@@ -101,7 +149,6 @@ for i in range(num_threads):
     t.daemon = True
     t.start()
     num_threads = (requests.get("https://api.ssllabs.com/api/v3/info").json())['maxAssessments']
-    print("Updated max_threads: " + str(num_threads))
 
 start = time.time()
 
