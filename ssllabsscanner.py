@@ -43,7 +43,8 @@ def resultsFromCache(host, publish='off', startNew='off', fromCache='on', all='d
         while data['status'] != 'READY' and data['status'] != 'ERROR':
             time.sleep(30)
             data = requestAPI(path, payload)
-
+    except:
+        return newScan(host)
 
     return data
 
@@ -61,6 +62,7 @@ def newScan(host, publish='off', startNew='on', all='done', ignoreMismatch='on')
 
 
     payload.pop('startNew')
+
 
     while results['status'] != 'READY' and results['status'] != 'ERROR':
         if results['status'] == 'IN_PROGRESS':

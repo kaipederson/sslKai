@@ -6,7 +6,7 @@ import time
 
 print_lock = threading.Lock()
 
-num_threads = 21;
+num_threads = 5;
 
 '''
 scan_domain uses the ssllabsscanner functions resultsFromCache (if possible) or newScan. The returned JSON object
@@ -18,11 +18,12 @@ def scan_domain(domain):
         print("\nStarting thread {}".format(threading.current_thread().name))
         print("Scanning this domain " + domain + "\n")
 
-    try:
-        scan = ssllabsscanner.resultsFromCache(str(domain))
-    except:
-        scan = ssllabsscanner.newScan(str(domain))
-        time.sleep(5)
+    #try:
+    #   scan = ssllabsscanner.resultsFromCache(str(domain))
+    #except:
+    time.sleep(1)
+    scan = ssllabsscanner.newScan(str(domain))
+
 
 
     with print_lock:
