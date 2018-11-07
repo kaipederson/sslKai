@@ -4,6 +4,7 @@ import sys
 import time
 import requests
 import logging
+import csv
 
 print_lock = threading.Lock()
 
@@ -14,6 +15,14 @@ curr_assessments = (requests.get("https://api.ssllabs.com/api/v3/info").json())[
 
 API = 'https://api.ssllabs.com/api/v3/'
 
+
+def csvWrite(domain, ipAddress, grade, cert):
+
+    with open(str(sys.argv[2]),"w") as csvOutput:
+        outputFile = csv.writer(csvOutput)
+        outputFile.writerow([domain, ipAddress, grade, cert])
+
+    return
 
 def requestAPI(path, payload={}):
     '''This is a helper method that takes the path to the relevant
@@ -32,8 +41,9 @@ def requestAPI(path, payload={}):
         logging.exception('Request failed.')
         sys.exit(1)
 
+    #if we have a thread running and SSLLabs reduces the number of concurrent assessments, we'll just wait patiently
+    #for the request to complete
     while(response.status_code == 429):
-        print("call me icarus")
         time.sleep(10)
         response = requests.get(url, params=payload)
 
@@ -74,15 +84,15 @@ contains information regarding the SSLLab Scan. We're just concerned with the do
 
 def scan_domain(domain):
 
-    with print_lock:
-        print("\nStarting thread {}".format(threading.current_thread().name))
-        print("Scanning " + domain)
+    #with print_lock:
+        #print("\nStarting thread {}".format(threading.current_thread().name))
+        #print("Scanning " + domain)
 
     time.sleep(1)
     scan = newScan(str(domain))
 
     with print_lock:
-        print("{}".format(threading.current_thread().name))
+        #print("{}".format(threading.current_thread().name))
         #print(scan)
 
         try:
@@ -104,6 +114,7 @@ def scan_domain(domain):
             cert = "ERR"
 
         SQLWrite(domain, ipAddress, grade, cert)
+        csvWrite(domain, ipAddress, grade, cert)
 
         print(domain + " " + ipAddress + " " + grade + " " + cert)
         print("Completed after = {0:.5f}".format(time.time() - start))
@@ -117,12 +128,25 @@ Main Application
 '''
 
 
+#first gotta check those files
+try:
+    input = open(str(sys.argv[1]), "r")
+    output = open(str(sys.argv[2]),"w")
+
+    input.close()
+    output.close()
+
+except:
+    print("Usage: Scanner_App.py <file containing domains delimited by newlines>")
+    exit()
+
+
 print("Starting SSL Labs Scan ----------------------------------")
 
 scan_info = requests.get("https://api.ssllabs.com/api/v3/info")
 num_threads = (scan_info.json())['maxAssessments']
 
-print(scan_info.json())
+#print(scan_info.json())
 
 print("SSLLabs currently allows " + str(num_threads) + " concurrent assessments.\n")
 
@@ -152,7 +176,9 @@ with open(str(sys.argv[1]),"r") as file:
             domain_list.append(line)
 
 
-for i in range(num_threads - 1):
+
+for i in range(num_threads):
+    #don't want to exceed the number of threads SSLLabs is currently allowing
     while(max_assessments <= curr_assessments):
         print("Max " + str(max_assessments) + " curr " + str(curr_assessments))
         time.sleep(1)
